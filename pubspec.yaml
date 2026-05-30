@@ -40,6 +40,10 @@ dependencies:
   google_fonts: ^8.1.0
   image_picker: ^1.2.2
   geolocator: ^14.0.2
+  geocoding: ^3.0.0
+  mapcn_flutter: ^1.0.2
+  flutter_map: ^8.0.0
+  latlong2: ^0.9.1
 
 dev_dependencies:
   flutter_test:
