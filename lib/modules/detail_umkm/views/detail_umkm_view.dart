@@ -112,6 +112,40 @@ class DetailUmkmView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ── Promo & Category Badges ────────────────
+                      if ((product['is_promo'] == true) || (product['kategori'] != null))
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            children: [
+                              if (product['is_promo'] == true) ...[
+                                AppBadge.promo(),
+                                const SizedBox(width: 8),
+                              ],
+                              if (product['kategori'] != null)
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primarySurface,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      product['kategori'].toString().toUpperCase(),
+                                      style: AppTheme.labelMd.copyWith(
+                                        fontSize: 10,
+                                        color: AppColors.primary,
+                                        letterSpacing: 0.5,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
                       // ── Product name & price ────────────────
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,7 +385,9 @@ class DetailUmkmView extends StatelessWidget {
 
                       // Review list
                       Obx(() {
-                        if (controller.reviews.isEmpty) {
+                        final displayedReviews = controller.reviews.where((r) => (r['rating'] as num) >= 3).toList();
+
+                        if (displayedReviews.isEmpty) {
                           return Padding(
                             padding:
                                 const EdgeInsets.symmetric(vertical: 24),
@@ -362,7 +398,9 @@ class DetailUmkmView extends StatelessWidget {
                                       size: 48, color: AppColors.textTertiary),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'Belum ada ulasan. Jadilah yang pertama!',
+                                    controller.reviews.isEmpty 
+                                        ? 'Belum ada ulasan. Jadilah yang pertama!'
+                                        : 'Belum ada ulasan positif untuk saat ini.',
                                     textAlign: TextAlign.center,
                                     style: AppTheme.bodySm,
                                   ),
@@ -375,9 +413,9 @@ class DetailUmkmView extends StatelessWidget {
                         return ListView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          itemCount: controller.reviews.length,
+                          itemCount: displayedReviews.length,
                           itemBuilder: (_, i) {
-                            final rev = controller.reviews[i];
+                            final rev = displayedReviews[i];
                             final name = rev['username'] ?? 'Anonim';
                             final comment = rev['komentar'] ?? '';
                             final rating = rev['rating'] ?? 5;

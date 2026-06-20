@@ -227,6 +227,17 @@ class DashboardController extends GetxController {
     required double lat,
     required double lng,
   }) async {
+    if (nama.trim().isEmpty || deskripsi.trim().isEmpty || phone.trim().isEmpty) {
+      Get.snackbar(
+        'Validasi Gagal!',
+        'Nama Warung, Deskripsi, dan No. Telepon tidak boleh ada yang kosong.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.amber.shade800,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
     try {
       isLoading(true);
       await supabase.from('umkm').update({

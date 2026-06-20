@@ -40,9 +40,10 @@ class HomeController extends GetxController {
 
   // List UMKM untuk map in-app
   var umkmList = <dynamic>[].obs;
+  var topUmkmList = <Map<String, dynamic>>[].obs;
   
   List<dynamic> get activeUmkmList => umkmList
-      .where((u) => u['latitude'] != null && u['longitude'] != null)
+      .where((u) => u['latitude'] != null && u['longitude'] != null && u['status_verifikasi'] != 'rejected')
       .toList();
 
   // Titik tengah Mapcn
@@ -119,6 +120,36 @@ class HomeController extends GetxController {
     }
   }
 
+  void _calculateTopUmkm() {
+    final List<Map<String, dynamic>> computedList = [];
+    
+    // Hanya kalkulasi UMKM yang statusnya bukan ditolak
+    for (var u in umkmList.where((u) => u['status_verifikasi'] != 'rejected')) {
+      final umkmId = u['id'];
+      final umkmProducts = _allProducts.where((p) => p.umkmId == umkmId).toList();
+      
+      double totalRating = 0.0;
+      int reviewsCount = 0;
+      for (var p in umkmProducts) {
+        if (p.totalReviews > 0) {
+          totalRating += (p.averageRating * p.totalReviews);
+          reviewsCount += p.totalReviews;
+        }
+      }
+      
+      double avgRating = reviewsCount > 0 ? (totalRating / reviewsCount) : 0.0;
+      
+      computedList.add({
+        ...(u as Map<String, dynamic>),
+        'computed_rating': double.parse(avgRating.toStringAsFixed(1)),
+        'reviews_count': reviewsCount,
+      });
+    }
+    
+    computedList.sort((a, b) => (b['computed_rating'] as double).compareTo(a['computed_rating'] as double));
+    topUmkmList.value = computedList;
+  }
+
   // Fungsi buka Google Maps untuk mencari warung UMKM terdekat
   Future<void> openGoogleMaps() async {
     try {
@@ -188,12 +219,13 @@ class HomeController extends GetxController {
           .map((e) => ProductModel.fromJson(e))
           .toList();
       
-      // Panggil fungsi filter buat misah data pertama kali
-      _filterProducts();
-
-      // Ambil data warung UMKM untuk peta in-app
+      // Ambil data warung UMKM untuk peta in-app dan validasi status terlebih dahulu
       await fetchUmkm();
       await determineMapCenter();
+      _calculateTopUmkm();
+
+      // Panggil fungsi filter buat misah data setelah data UMKM lengkap
+      _filterProducts();
       
     } catch (e) {
       Get.snackbar(
@@ -218,9 +250,17 @@ class HomeController extends GetxController {
   }
 
   void _filterProducts() {
-    List<ProductModel> filtered = _allProducts;
+    // 1. Filter awal: Jangan tampilkan produk dari UMKM yang ditolak (rejected)
+    final allowedUmkmIds = umkmList
+        .where((u) => u['status_verifikasi'] != 'rejected')
+        .map((u) => u['id'].toString())
+        .toSet();
 
-    // 1. Filter berdasarkan Kategori (jika bukan 'Semua')
+    List<ProductModel> filtered = _allProducts
+        .where((p) => allowedUmkmIds.contains(p.umkmId))
+        .toList();
+
+    // 2. Filter berdasarkan Kategori (jika bukan 'Semua')
     if (selectedCategory.value != 'Semua') {
       filtered = filtered.where((p) => p.kategori == selectedCategory.value).toList();
     }
@@ -231,7 +271,10 @@ class HomeController extends GetxController {
       filtered = filtered.where((p) => p.namaProduk.toLowerCase().contains(keyword)).toList();
     }
 
-    // 3. Pisahkan antara produk promo dan produk reguler
+    // 3. Urutkan produk berdasarkan rating tertinggi ke terendah
+    filtered.sort((a, b) => b.averageRating.compareTo(a.averageRating));
+
+    // 4. Pisahkan antara produk promo dan produk reguler
     promoProducts.value = filtered.where((p) => p.isPromo).toList();
     regularProducts.value = filtered.where((p) => !p.isPromo).toList();
   }

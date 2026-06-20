@@ -39,10 +39,40 @@ class ProductCardHorizontal extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (product.isPromo)
+                if (product.isPromo || product.kategori != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 4),
-                    child: AppBadge.promo(),
+                    child: Row(
+                      children: [
+                        if (product.isPromo) ...[
+                          AppBadge.promo(),
+                          const SizedBox(width: 6),
+                        ],
+                        if (product.kategori != null)
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primarySurface,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  product.kategori!.toUpperCase(),
+                                  style: AppTheme.labelMd.copyWith(
+                                    fontSize: 9,
+                                    color: AppColors.primary,
+                                    letterSpacing: 0.5,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 Text(
                   product.namaProduk,
@@ -144,6 +174,27 @@ class ProductCardVertical extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (product.kategori != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySurface,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          product.kategori!.toUpperCase(),
+                          style: AppTheme.labelMd.copyWith(
+                            fontSize: 9,
+                            color: AppColors.primary,
+                            letterSpacing: 0.5,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
                   Text(
                     product.namaProduk,
                     style: AppTheme.headingSm,

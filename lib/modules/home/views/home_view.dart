@@ -46,24 +46,43 @@ class HomeView extends GetView<HomeController> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  controller.selectedTabIndex.value == 1
-                                      ? 'Promo Jajanan 🔥'
-                                      : 'Etalase Jajanan 🍱',
-                                  style: AppTheme.headingMd,
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.asset(
+                                'assets/images/logo.png',
+                                height: 46,
+                                errorBuilder: (context, error, stackTrace) => const Icon(
+                                  Icons.storefront_rounded,
+                                  size: 46,
+                                  color: AppColors.primary,
                                 ),
-                                Text(
-                                  controller.selectedTabIndex.value == 1
-                                      ? 'Lagi diskon gede-gedean nih!'
-                                      : 'Temukan jajanan favoritmu',
-                                  style: AppTheme.bodySm,
-                                ),
-                              ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'UMKM MAJU',
+                                    style: AppTheme.headingMd.copyWith(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Aplikasi Pemetaan dan Promosi UMKM',
+                                    style: AppTheme.bodySm.copyWith(
+                                      fontSize: 11,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -148,6 +167,102 @@ class HomeView extends GetView<HomeController> {
                   ),
                 ),
 
+                // ── Top UMKM section ─────────────────────────────
+                if (controller.selectedTabIndex.value == 0 && controller.topUmkmList.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                      child: SectionHeader(
+                        title: '🌟 UMKM Terbaik',
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 72,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: controller.topUmkmList.length,
+                        itemBuilder: (context, i) {
+                          final umkm = controller.topUmkmList[i];
+                          final String name = umkm['nama_toko'] ?? 'Warung';
+                          final double rating = umkm['computed_rating'] ?? 0.0;
+                          final int reviewsCount = umkm['reviews_count'] ?? 0;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 14),
+                            child: SizedBox(
+                              width: 200,
+                              child: AppCard(
+                                onTap: () => Get.toNamed('/profile-umkm', arguments: umkm['id']),
+                                padding: const EdgeInsets.all(12),
+                                margin: EdgeInsets.zero,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColors.primarySurface,
+                                        image: (umkm['foto_profil'] != null &&
+                                                umkm['foto_profil'].toString().isNotEmpty)
+                                            ? DecorationImage(
+                                                image: NetworkImage(umkm['foto_profil']),
+                                                fit: BoxFit.cover,
+                                              )
+                                            : null,
+                                      ),
+                                      child: (umkm['foto_profil'] == null ||
+                                              umkm['foto_profil'].toString().isEmpty)
+                                          ? const Icon(Icons.storefront_rounded,
+                                              size: 22, color: AppColors.primary)
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            name,
+                                            style: AppTheme.labelLg,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.star_rounded,
+                                                  size: 14, color: AppColors.warning),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                rating.toString(),
+                                                style: AppTheme.labelMd.copyWith(
+                                                    color: AppColors.textPrimary),
+                                              ),
+                                              Text(
+                                                ' ($reviewsCount)',
+                                                style: AppTheme.bodySm,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+
                 // ── Promo section ─────────────────────────────
                 if (controller.selectedTabIndex.value == 0 && controller.promoProducts.isNotEmpty) ...[
                   SliverToBoxAdapter(
@@ -162,7 +277,7 @@ class HomeView extends GetView<HomeController> {
                   ),
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 232,
+                      height: 256,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(horizontal: 20),

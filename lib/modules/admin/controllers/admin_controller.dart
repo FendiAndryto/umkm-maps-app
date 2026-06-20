@@ -100,7 +100,10 @@ class AdminController extends GetxController {
   }
 
   Future<void> addCategory(String name) async {
-    if (name.trim().isEmpty) return;
+    if (name.trim().isEmpty) {
+      Get.snackbar('Gagal', 'Nama kategori tidak boleh kosong!', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
     try {
       await supabase.from('categories').insert({'name': name.trim()});
       fetchCategories();
@@ -110,14 +113,18 @@ class AdminController extends GetxController {
         Get.find<HomeController>().fetchCategories();
       }
       
-      Get.snackbar('Sukses', 'Kategori baru "$name" berhasil ditambahkan!');
+      Get.snackbar('Sukses', 'Kategori baru "$name" berhasil ditambahkan!', snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
-      Get.snackbar('Error', 'Gagal tambah kategori: $e');
+      Get.snackbar('Error', 'Gagal tambah kategori: $e', snackPosition: SnackPosition.BOTTOM);
     }
   }
 
   Future<void> updateCategory(String id, String oldName, String newName) async {
-    if (newName.trim().isEmpty || oldName == newName.trim()) return;
+    if (newName.trim().isEmpty) {
+      Get.snackbar('Gagal', 'Nama kategori tidak boleh kosong!', snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+    if (oldName == newName.trim()) return;
     try {
       final cleanNewName = newName.trim();
       
@@ -136,19 +143,23 @@ class AdminController extends GetxController {
         homeCtrl.fetchProducts();
       }
       
-      Get.snackbar('Sukses', 'Kategori "$oldName" berhasil diubah menjadi "$cleanNewName"!');
+      Get.snackbar('Sukses', 'Kategori "$oldName" berhasil diubah menjadi "$cleanNewName"!', snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
-      Get.snackbar('Error', 'Gagal ubah kategori: $e');
+      Get.snackbar('Error', 'Gagal ubah kategori: $e', snackPosition: SnackPosition.BOTTOM);
     }
   }
 
   Future<void> deleteCategory(String id, String name) async {
     try {
+      // 0. Cek apakah ada produk yang sedang pakai kategori ini
+      final response = await supabase.from('products').select('id').eq('kategori', name);
+      if ((response as List).isNotEmpty) {
+        Get.snackbar('Gagal', 'Kategori "$name" tidak bisa dihapus karena sedang digunakan oleh beberapa produk!', snackPosition: SnackPosition.BOTTOM);
+        return;
+      }
+
       // 1. Hapus dari tabel categories
       await supabase.from('categories').delete().eq('id', id);
-      
-      // 2. Set kategori produk terkait ke 'Lainnya' biar ga kosong/null
-      await supabase.from('products').update({'kategori': 'Lainnya'}).eq('kategori', name);
       
       fetchCategories();
       
@@ -159,9 +170,9 @@ class AdminController extends GetxController {
         homeCtrl.fetchProducts();
       }
       
-      Get.snackbar('Sukses', 'Kategori "$name" berhasil dihapus!');
+      Get.snackbar('Sukses', 'Kategori "$name" berhasil dihapus!', snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
-      Get.snackbar('Error', 'Gagal hapus kategori: $e');
+      Get.snackbar('Error', 'Gagal hapus kategori: $e', snackPosition: SnackPosition.BOTTOM);
     }
   }
 
