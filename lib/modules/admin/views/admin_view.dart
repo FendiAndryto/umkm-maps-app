@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:umkm_maps_app/core/theme/app_colors.dart';
 import 'package:umkm_maps_app/core/theme/app_theme.dart';
 import 'package:umkm_maps_app/core/widgets/app_button.dart';
@@ -357,7 +358,28 @@ class AdminView extends GetView<AdminController> {
                   'Status', data['status_verifikasi']?.toString() ?? '-'),
               _infoRow('Email', data['profiles']?['email'] ?? '-'),
               const SizedBox(height: 16),
-              Text('Dokumen Legalitas', style: AppTheme.labelLg),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Dokumen Legalitas', style: AppTheme.labelLg),
+                  if (suratUrl.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.download_rounded, size: 20, color: AppColors.primary),
+                      onPressed: () async {
+                        final fileName = data['surat_izin_url']?.split('/').last ?? 'dokumen';
+                        final downloadUrl = suratUrl.contains('?') 
+                            ? '$suratUrl&download=$fileName' 
+                            : '$suratUrl?download=$fileName';
+                        final uri = Uri.parse(downloadUrl);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      tooltip: 'Download',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                ],
+              ),
               const SizedBox(height: 8),
               Container(
                 height: 180,
@@ -373,11 +395,40 @@ class AdminView extends GetView<AdminController> {
                       ? Center(
                           child: Text('Tidak ada dokumen',
                               style: AppTheme.bodySm))
-                      : Image.network(suratUrl, fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const Center(
-                            child: Icon(Icons.broken_image_outlined,
-                                color: AppColors.textTertiary),
-                          )),
+                      : GestureDetector(
+                          onTap: () {
+                            Get.dialog(
+                              Dialog(
+                                insetPadding: const EdgeInsets.all(16),
+                                backgroundColor: Colors.transparent,
+                                child: Stack(
+                                  alignment: Alignment.topRight,
+                                  children: [
+                                    InteractiveViewer(
+                                      child: Image.network(suratUrl, fit: BoxFit.contain),
+                                    ),
+                                    Container(
+                                      margin: const EdgeInsets.all(8),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: IconButton(
+                                        icon: const Icon(Icons.close, color: Colors.white),
+                                        onPressed: () => Get.back(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                          child: Image.network(suratUrl, fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Center(
+                                child: Icon(Icons.broken_image_outlined,
+                                    color: AppColors.textTertiary),
+                              )),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),

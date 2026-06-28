@@ -194,7 +194,7 @@ class DashboardController extends GetxController {
 
       // 2. Ambil Posisi Saat Ini
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
 
       latitude.value = position.latitude;

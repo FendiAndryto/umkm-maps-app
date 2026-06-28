@@ -72,7 +72,7 @@ class AuthController extends GetxController {
 
       // 2. Tembak koordinat!
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high)
       );
 
       lat.value = position.latitude;
