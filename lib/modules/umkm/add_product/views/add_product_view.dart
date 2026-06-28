@@ -5,6 +5,7 @@ import 'package:umkm_maps_app/core/theme/app_theme.dart';
 import 'package:umkm_maps_app/core/widgets/app_button.dart';
 import 'package:umkm_maps_app/core/widgets/app_text_field.dart';
 import 'package:umkm_maps_app/modules/umkm/add_product/controllers/add_product_controller.dart';
+import 'package:umkm_maps_app/modules/umkm/widgets/admin_whatsapp_button.dart';
 
 class AddProductView extends GetView<AddProductController> {
   const AddProductView({super.key});
@@ -14,6 +15,7 @@ class AddProductView extends GetView<AddProductController> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Tambah Menu')),
+      floatingActionButton: const AdminWhatsAppButton(),
       body: Obx(() {
         return SingleChildScrollView(
           padding: const EdgeInsets.all(20),

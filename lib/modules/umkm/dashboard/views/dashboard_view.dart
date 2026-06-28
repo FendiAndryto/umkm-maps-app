@@ -6,6 +6,7 @@ import 'package:umkm_maps_app/core/widgets/app_button.dart';
 import 'package:umkm_maps_app/core/widgets/app_card.dart';
 import 'package:umkm_maps_app/data/models/product_model.dart';
 import 'package:umkm_maps_app/modules/umkm/dashboard/controllers/dashboard_controller.dart';
+import 'package:umkm_maps_app/modules/umkm/widgets/admin_whatsapp_button.dart';
 
 class DashboardView extends GetView<DashboardController> {
   const DashboardView({super.key});
@@ -83,21 +84,28 @@ class DashboardView extends GetView<DashboardController> {
               ],
             )
           : const SizedBox.shrink()),
-      floatingActionButton: Obx(() =>
-          controller.statusVerifikasi.value == 'approved' && controller.currentTabIndex.value == 1
-              ? FloatingActionButton.extended(
-                  onPressed: () => Get.toNamed('/add-product'),
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.textOnPrimary,
-                  shape: const StadiumBorder(),
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text(
-                    'Tambah Menu',
-                    style: AppTheme.labelLg,
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Obx(() => controller.statusVerifikasi.value == 'approved' &&
+                  controller.currentTabIndex.value == 1
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: FloatingActionButton(
+                    heroTag: 'add_product_btn',
+                    onPressed: () => Get.toNamed('/add-product'),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.textOnPrimary,
+                    elevation: 3,
+                    tooltip: 'Tambah Menu',
+                    child: const Icon(Icons.add_rounded, size: 28),
                   ),
-                  elevation: 3,
                 )
               : const SizedBox.shrink()),
+          const AdminWhatsAppButton(),
+        ],
+      ),
     );
   }
 

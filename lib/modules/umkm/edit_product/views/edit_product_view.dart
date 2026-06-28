@@ -5,6 +5,7 @@ import 'package:umkm_maps_app/core/theme/app_theme.dart';
 import 'package:umkm_maps_app/core/widgets/app_button.dart';
 import 'package:umkm_maps_app/core/widgets/app_text_field.dart';
 import 'package:umkm_maps_app/modules/umkm/edit_product/controllers/edit_product_controller.dart';
+import 'package:umkm_maps_app/modules/umkm/widgets/admin_whatsapp_button.dart';
 
 class EditProductView extends GetView<EditProductController> {
   const EditProductView({super.key});
@@ -14,6 +15,7 @@ class EditProductView extends GetView<EditProductController> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('Edit Menu')),
+      floatingActionButton: const AdminWhatsAppButton(),
       body: Obx(() => SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(

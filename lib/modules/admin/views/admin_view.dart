@@ -302,14 +302,13 @@ class AdminView extends GetView<AdminController> {
                                       context, controller, catId, catName),
                                   visualDensity: VisualDensity.compact,
                                 ),
-                                if (catName != 'Lainnya')
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline_rounded,
-                                        color: AppColors.error, size: 18),
-                                    onPressed: () => _confirmDeleteCategory(
-                                        context, controller, catId, catName),
-                                    visualDensity: VisualDensity.compact,
-                                  ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded,
+                                      color: AppColors.error, size: 18),
+                                  onPressed: () => _confirmDeleteCategory(
+                                      context, controller, catId, catName),
+                                  visualDensity: VisualDensity.compact,
+                                ),
                               ],
                             ),
                           ),
@@ -498,8 +497,7 @@ class AdminView extends GetView<AdminController> {
       String id, String name) {
     Get.defaultDialog(
       title: 'Hapus Kategori?',
-      middleText:
-          'Yakin hapus "$name"? Produk terkait akan dipindah ke "Lainnya".',
+      middleText: 'Yakin ingin menghapus kategori "$name"?',
       textConfirm: 'Hapus',
       textCancel: 'Batal',
       confirmTextColor: Colors.white,
