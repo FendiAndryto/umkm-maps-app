@@ -40,15 +40,21 @@ class AuthView extends GetView<AuthController> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  isLogin ? 'Selamat Datang' : 'Daftar Warung',
+                  isLogin
+                      ? 'Selamat Datang'
+                      : (controller.selectedRole.value == 'umkm'
+                          ? 'Daftar Warung'
+                          : 'Daftar Pengguna'),
                   textAlign: TextAlign.center,
                   style: AppTheme.headingXl,
                 ),
                 const SizedBox(height: 6),
                 Text(
                   isLogin
-                      ? 'Masuk ke akun UMKM kamu'
-                      : 'Daftarkan warung kamu sekarang',
+                      ? 'Masuk ke akun kamu'
+                      : (controller.selectedRole.value == 'umkm'
+                          ? 'Daftarkan warung kamu sekarang'
+                          : 'Daftar untuk memberi rating dan ulasan'),
                   textAlign: TextAlign.center,
                   style: AppTheme.bodyMd.copyWith(color: AppColors.textSecondary),
                 ),
@@ -62,39 +68,70 @@ class AuthView extends GetView<AuthController> {
                           key: const ValueKey('register'),
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            AppTextField(
-                              controller: controller.namaTokoController,
-                              label: 'Nama Toko / Warung',
-                              hint: 'Mis. Warung Makan Bu Sari',
-                              prefixIcon: Icons.storefront_outlined,
+                            // --- BANNER GANTI ROLE ---
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              margin: const EdgeInsets.only(bottom: 24),
+                              decoration: BoxDecoration(
+                                color: AppColors.primarySurface,
+                                borderRadius: AppTheme.roundedMd,
+                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      "Mendaftar sebagai: ${controller.selectedRole.value == 'umkm' ? 'Pemilik UMKM' : 'Pengguna Biasa'}",
+                                      style: AppTheme.bodyMd.copyWith(fontWeight: FontWeight.w600, color: AppColors.primary),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => controller.showRoleSelectionDialog(),
+                                    child: Text(
+                                      '(Ubah)',
+                                      style: AppTheme.labelMd.copyWith(color: AppColors.primary, decoration: TextDecoration.underline),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 16),
-                            AppTextField(
-                              controller: controller.noTeleponController,
-                              label: 'Nomor Telepon / WhatsApp',
-                              hint: '08123456789',
-                              prefixIcon: Icons.phone_outlined,
-                              keyboardType: TextInputType.phone,
-                            ),
-                            const SizedBox(height: 16),
-                            _UploadCard(
-                              label: 'Foto Surat Izin (SKU)',
-                              isAttached:
-                                  controller.selectedSurat.value != null,
-                              attachedLabel: 'Surat Izin Terlampir',
-                              icon: Icons.description_outlined,
-                              onTap: () => controller.pickSurat(),
-                            ),
-                            const SizedBox(height: 12),
-                            _UploadCard(
-                              label: 'Ambil Lokasi GPS Warung',
-                              isAttached: controller.isLocationPicked.value,
-                              attachedLabel: 'Lokasi Terkunci',
-                              icon: Icons.location_on_outlined,
-                              actionLabel: 'Ambil GPS',
-                              onTap: () => controller.getCurrentLocation(),
-                            ),
-                            const SizedBox(height: 16),
+                            // --- END BANNER ---
+
+                            if (controller.selectedRole.value == 'umkm') ...[
+                              AppTextField(
+                                controller: controller.namaTokoController,
+                                label: 'Nama Toko / Warung',
+                                hint: 'Mis. Warung Makan Bu Sari',
+                                prefixIcon: Icons.storefront_outlined,
+                              ),
+                              const SizedBox(height: 16),
+                              AppTextField(
+                                controller: controller.noTeleponController,
+                                label: 'Nomor Telepon / WhatsApp',
+                                hint: '08123456789',
+                                prefixIcon: Icons.phone_outlined,
+                                keyboardType: TextInputType.phone,
+                              ),
+                              const SizedBox(height: 16),
+                              _UploadCard(
+                                label: 'Foto Surat Izin (SKU)',
+                                isAttached:
+                                    controller.selectedSurat.value != null,
+                                attachedLabel: 'Surat Izin Terlampir',
+                                icon: Icons.description_outlined,
+                                onTap: () => controller.pickSurat(),
+                              ),
+                              const SizedBox(height: 12),
+                              _UploadCard(
+                                label: 'Ambil Lokasi GPS Warung',
+                                isAttached: controller.isLocationPicked.value,
+                                attachedLabel: 'Lokasi Terkunci',
+                                icon: Icons.location_on_outlined,
+                                actionLabel: 'Ambil GPS',
+                                onTap: () => controller.getCurrentLocation(),
+                              ),
+                              const SizedBox(height: 16),
+                            ],
                           ],
                         )
                       : const SizedBox.shrink(key: ValueKey('login')),
@@ -120,7 +157,7 @@ class AuthView extends GetView<AuthController> {
 
                 // ── Submit ─────────────────────────────────────────
                 AppButton(
-                  label: isLogin ? 'Masuk Sekarang' : 'Daftar Warung',
+                  label: isLogin ? 'Masuk Sekarang' : 'Daftar Sekarang',
                   isLoading: controller.isLoading.value,
                   onPressed: () => controller.submit(),
                 ),
@@ -136,7 +173,13 @@ class AuthView extends GetView<AuthController> {
                           .copyWith(color: AppColors.textSecondary),
                     ),
                     GestureDetector(
-                      onTap: () => controller.toggleMode(),
+                      onTap: () {
+                        if (isLogin) {
+                           controller.showRoleSelectionDialog();
+                        } else {
+                           controller.toggleMode();
+                        }
+                      },
                       child: Text(
                         isLogin ? 'Daftar di sini' : 'Masuk',
                         style: AppTheme.labelLg

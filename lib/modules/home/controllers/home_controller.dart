@@ -38,6 +38,10 @@ class HomeController extends GetxController {
   // Bottom Navigation Tab Index
   var selectedTabIndex = 0.obs;
 
+  // State autentikasi dinamis
+  var isLoggedIn = false.obs;
+  var userProfile = {}.obs;
+
   // List UMKM untuk map in-app
   var umkmList = <dynamic>[].obs;
   var topUmkmList = <Map<String, dynamic>>[].obs;
@@ -183,8 +187,98 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     mapPageController = PageController(viewportFraction: 0.85);
+    _checkLoginStatus();
     fetchProducts();
     fetchCategories(); // Ambil kategori dinamis!
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final user = supabase.auth.currentUser;
+    if (user != null) {
+      isLoggedIn.value = true;
+      try {
+        final profile = await supabase.from('profiles').select().eq('id', user.id).maybeSingle();
+        if (profile != null) userProfile.value = profile;
+      } catch(e) {
+        // Abaikan
+      }
+    }
+    
+    supabase.auth.onAuthStateChange.listen((data) async {
+      final AuthChangeEvent event = data.event;
+      if (event == AuthChangeEvent.signedIn && data.session != null) {
+        isLoggedIn.value = true;
+        try {
+          final profile = await supabase.from('profiles').select().eq('id', data.session!.user.id).maybeSingle();
+          if (profile != null) userProfile.value = profile;
+        } catch(e) {
+          // Abaikan
+        }
+      } else if (event == AuthChangeEvent.signedOut) {
+        isLoggedIn.value = false;
+        userProfile.clear();
+      }
+    });
+  }
+
+  void handleProfileTab() {
+    if (isLoggedIn.value) {
+      final role = userProfile['role'];
+      if (role == 'admin') {
+        Get.offAllNamed('/dashboard-admin');
+      } else if (role == 'umkm') {
+        Get.offAllNamed('/dashboard-umkm');
+      } else {
+        _showProfileBottomSheet();
+      }
+    } else {
+      Get.toNamed('/login');
+    }
+  }
+
+  void _showProfileBottomSheet() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Profil Akun',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              supabase.auth.currentUser?.email ?? 'Pengguna',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () async {
+                await supabase.auth.signOut();
+                Get.back();
+                Get.snackbar('Sukses', 'Berhasil logout bos!', backgroundColor: Colors.green.shade100);
+              },
+              icon: const Icon(Icons.logout, size: 24),
+              label: const Text('Keluar (Logout)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade50,
+                foregroundColor: Colors.red.shade700,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
   }
 
   @override

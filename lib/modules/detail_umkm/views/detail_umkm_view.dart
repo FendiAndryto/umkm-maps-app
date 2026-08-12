@@ -317,21 +317,20 @@ class DetailUmkmView extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       // Review form
-                      AppCard(
-                        child: Column(
+                      Obx(() => AppCard(
+                        child: controller.isLoggedIn.value 
+                        ? Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text('Tulis Ulasanmu',
-                                style: AppTheme.labelLg),
+                            Text('Tulis Ulasanmu', style: AppTheme.labelLg),
                             const SizedBox(height: 12),
 
                             // Star selector
-                            Obx(() => Row(
+                            Row(
                               children: List.generate(5, (i) {
                                 final v = i + 1;
                                 return GestureDetector(
-                                  onTap: () =>
-                                      controller.selectedStars.value = v,
+                                  onTap: () => controller.selectedStars.value = v,
                                   child: Padding(
                                     padding: const EdgeInsets.only(right: 4),
                                     child: Icon(
@@ -344,13 +343,13 @@ class DetailUmkmView extends StatelessWidget {
                                   ),
                                 );
                               }),
-                            )),
+                            ),
                             const SizedBox(height: 14),
 
                             AppTextField(
                               controller: commentNameCtrl,
                               label: 'Nama (opsional)',
-                              hint: 'Anonim',
+                              hint: 'Kosongkan jika ingin anonim',
                               prefixIcon: Icons.person_outline_rounded,
                             ),
                             const SizedBox(height: 12),
@@ -379,8 +378,26 @@ class DetailUmkmView extends StatelessWidget {
                               },
                             ),
                           ],
+                        )
+                        : Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.lock_outline_rounded, size: 48, color: AppColors.textTertiary),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Kamu harus login dulu buat ngasih ulasan',
+                              style: AppTheme.bodyMd.copyWith(color: AppColors.textSecondary),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            AppButton(
+                              label: 'Masuk (Login)',
+                              size: AppButtonSize.sm,
+                              onPressed: () => Get.toNamed('/login'),
+                            ),
+                          ],
                         ),
-                      ),
+                      )),
                       const SizedBox(height: 16),
 
                       // Review list

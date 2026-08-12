@@ -10,6 +10,9 @@ class AuthController extends GetxController {
   
   var isLoading = false.obs;
   var isLogin = true.obs; // Toggle Login/Register
+  
+  // --- TAMBAHAN BARU: Variabel buat nampung role ---
+  var selectedRole = 'pengguna'.obs;
 
   // Text Controllers
   final emailController = TextEditingController();
@@ -39,6 +42,59 @@ class AuthController extends GetxController {
     lat.value = 0.0;
     lng.value = 0.0;
     isLocationPicked.value = false;
+  }
+
+  // Fungsi nampilin popup pilih role
+  void showRoleSelectionDialog() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Pilih Jenis Akun',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () {
+                selectedRole.value = 'pengguna';
+                Get.back();
+                if (isLogin.value) toggleMode();
+              },
+              icon: const Icon(Icons.person_outline, size: 24),
+              label: const Text('Pengguna Biasa (Pemberi Rating)'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                alignment: Alignment.centerLeft,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () {
+                selectedRole.value = 'umkm';
+                Get.back();
+                if (isLogin.value) toggleMode();
+              },
+              icon: const Icon(Icons.storefront_outlined, size: 24),
+              label: const Text('Pemilik UMKM (Daftar Warung)'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                alignment: Alignment.centerLeft,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
   }
 
   // Fungsi ambil foto dari galeri
@@ -107,42 +163,56 @@ class AuthController extends GetxController {
         
         if (res.user != null) {
           // 1. Cek dulu jabatan dia di tabel profiles
-          final profile = await supabase
+          var profile = await supabase
               .from('profiles')
               .select('role')
               .eq('id', res.user!.id)
-              .single();
+              .maybeSingle();
+              
+          // Kalau profile-nya nyangkut/nggak ada (karena error constraint sebelumnya), kita bikinin otomatis
+          if (profile == null) {
+            await supabase.from('profiles').insert({
+              'id': res.user!.id,
+              'email': res.user!.email,
+              'role': 'pengguna',
+            });
+            profile = {'role': 'pengguna'};
+          }
           
           Get.snackbar('Sukses', 'Berhasil masuk bos!');
           
           // 2. Pisahin jalurnya pake logika IF!
           if (profile['role'] == 'admin') {
             Get.offAllNamed('/dashboard-admin'); 
-          } else {
+          } else if (profile['role'] == 'umkm') {
             Get.offAllNamed('/dashboard-umkm'); 
+          } else {
+            Get.offAllNamed('/'); 
           }
         }
       } else {
         // --- PROSES REGISTER UMKM ---
-        if (namaTokoController.text.isEmpty) {
-          Get.snackbar('Waduh', 'Nama toko wajib diisi bos!');
-          return;
-        }
-        if (noTeleponController.text.trim().isEmpty) {
-          Get.snackbar('Waduh', 'Nomor telepon wajib diisi bos!', 
-              backgroundColor: Colors.orange.shade100);
-          return;
-        }
-        if (selectedSurat.value == null) {
-          Get.snackbar('Ilegal Lu?', 'Surat izin dari kecamatan wajib ada!', 
-              backgroundColor: Colors.orange.shade100);
-          return;
-        }
-        // --- CEK LOKASI JUGA SEBELUM DI-ACC DAFTAR ---
-        if (!isLocationPicked.value) {
-          Get.snackbar('Buset', 'Lokasi warung lu di mana? Pencet tombol Ambil GPS dulu bos!', 
-              backgroundColor: Colors.orange.shade100);
-          return;
+        if (selectedRole.value == 'umkm') {
+          if (namaTokoController.text.isEmpty) {
+            Get.snackbar('Waduh', 'Nama toko wajib diisi bos!');
+            return;
+          }
+          if (noTeleponController.text.trim().isEmpty) {
+            Get.snackbar('Waduh', 'Nomor telepon wajib diisi bos!', 
+                backgroundColor: Colors.orange.shade100);
+            return;
+          }
+          if (selectedSurat.value == null) {
+            Get.snackbar('Ilegal Lu?', 'Surat izin dari kecamatan wajib ada!', 
+                backgroundColor: Colors.orange.shade100);
+            return;
+          }
+          // --- CEK LOKASI JUGA SEBELUM DI-ACC DAFTAR ---
+          if (!isLocationPicked.value) {
+            Get.snackbar('Buset', 'Lokasi warung lu di mana? Pencet tombol Ambil GPS dulu bos!', 
+                backgroundColor: Colors.orange.shade100);
+            return;
+          }
         }
         
         // 1. Daftar ke Auth Supabase
@@ -158,33 +228,38 @@ class AuthController extends GetxController {
           await supabase.from('profiles').insert({
             'id': userId,
             'email': res.user!.email,
-            'role': 'umkm',
+            'role': selectedRole.value,
           });
 
-          // 3. Upload Surat Izin ke Bucket Private
-          final file = selectedSurat.value!;
-          final fileExt = file.path.split('.').last;
-          final fileName = '${userId}_surat.$fileExt';
-          
-          await supabase.storage.from('dokumen-legal').upload(
-            fileName,
-            file,
-            fileOptions: const FileOptions(upsert: true),
-          );
-          
-          // 4. Suntik data ke tabel UMKM (SEKARANG PAKE KOORDINAT LOKASI & NO TELEPON)
-          await supabase.from('umkm').insert({
-            'user_id': userId,
-            'nama_toko': namaTokoController.text.trim(),
-            'status_verifikasi': 'pending', 
-            'surat_izin_url': fileName, 
-            'latitude': lat.value,   // NYAWA LOKASI WARUNG LU 
-            'longitude': lng.value,  // NYAWA LOKASI WARUNG LU
-            'no_telepon': noTeleponController.text.trim(), // Tambahan nomor telepon bos!
-          });
-          
-          Get.snackbar('Mantap!', 'Pendaftaran sukses. Tunggu divalidasi admin ya.', 
-              snackPosition: SnackPosition.BOTTOM);
+          if (selectedRole.value == 'umkm') {
+            // 3. Upload Surat Izin ke Bucket Private
+            final file = selectedSurat.value!;
+            final fileExt = file.path.split('.').last;
+            final fileName = '${userId}_surat.$fileExt';
+            
+            await supabase.storage.from('dokumen-legal').upload(
+              fileName,
+              file,
+              fileOptions: const FileOptions(upsert: true),
+            );
+            
+            // 4. Suntik data ke tabel UMKM
+            await supabase.from('umkm').insert({
+              'user_id': userId,
+              'nama_toko': namaTokoController.text.trim(),
+              'status_verifikasi': 'pending', 
+              'surat_izin_url': fileName, 
+              'latitude': lat.value,   
+              'longitude': lng.value,  
+              'no_telepon': noTeleponController.text.trim(), 
+            });
+            
+            Get.snackbar('Mantap!', 'Pendaftaran sukses. Tunggu divalidasi admin ya.', 
+                snackPosition: SnackPosition.BOTTOM);
+          } else {
+             Get.snackbar('Mantap!', 'Pendaftaran berhasil. Silakan masuk.', 
+                snackPosition: SnackPosition.BOTTOM);
+          }
           toggleMode(); // Balikin ke mode login
         }
       }

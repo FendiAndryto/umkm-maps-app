@@ -363,7 +363,7 @@ class HomeView extends GetView<HomeController> {
         currentIndex: controller.selectedTabIndex.value,
         onTap: (index) {
           if (index == 3) {
-            Get.toNamed('/login');
+            controller.handleProfileTab();
           } else {
             if (index == 2 && controller.selectedTabIndex.value != 2) {
               controller.initMapController();
@@ -376,26 +376,26 @@ class HomeView extends GetView<HomeController> {
         unselectedItemColor: AppColors.textTertiary,
         selectedLabelStyle: AppTheme.labelMd.copyWith(fontSize: 11),
         unselectedLabelStyle: AppTheme.labelMd.copyWith(fontSize: 11),
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home_rounded),
             label: 'Beranda',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.local_fire_department_outlined),
             activeIcon: Icon(Icons.local_fire_department_rounded),
             label: 'Promo',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.map_outlined),
             activeIcon: Icon(Icons.map_rounded),
             label: 'Maps',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded),
-            activeIcon: Icon(Icons.person_rounded),
-            label: 'Login',
+            icon: Icon(controller.isLoggedIn.value ? Icons.manage_accounts_outlined : Icons.person_outline_rounded),
+            activeIcon: Icon(controller.isLoggedIn.value ? Icons.manage_accounts_rounded : Icons.person_rounded),
+            label: controller.isLoggedIn.value ? 'Akun' : 'Login',
           ),
         ],
       )),

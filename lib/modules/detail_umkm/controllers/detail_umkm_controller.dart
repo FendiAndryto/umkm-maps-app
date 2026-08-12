@@ -9,6 +9,8 @@ class DetailUmkmController extends GetxController {
   
   var isLoading = true.obs;
   var selectedStars = 5.obs; // Bintang yang dipilih saat review bos!
+  var isLoggedIn = false.obs; // Cek status login
+
   
   // Data reaktif buat produk, toko, dan ulasan
   var productData = {}.obs;
@@ -22,6 +24,11 @@ class DetailUmkmController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    isLoggedIn.value = supabase.auth.currentUser != null;
+    supabase.auth.onAuthStateChange.listen((data) {
+      isLoggedIn.value = data.session != null;
+    });
+
     // Ambil productId tiap kali controller diinisialisasi
     final productId = Get.arguments; 
     if (productId != null) {
@@ -104,17 +111,27 @@ class DetailUmkmController extends GetxController {
 
   // Fungsi kirim ulasan dari Tamu
   Future<void> submitReview(int rating, String komentar, String username) async {
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      Get.snackbar('Waduh', 'Harus login dulu bos buat ngasih ulasan!', backgroundColor: Colors.orange.shade100, snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
     final productId = Get.arguments;
     if (productId == null) return;
     
     try {
       isLoading(true);
       
+      final reviewerName = username.trim().isEmpty 
+          ? (user.email?.split('@').first ?? 'Pengguna')
+          : username.trim();
+
       await supabase.from('product_reviews').insert({
         'product_id': productId,
         'rating': rating,
         'komentar': komentar.trim(),
-        'username': username.trim().isEmpty ? 'Anonim' : username.trim(),
+        'username': reviewerName,
       });
       
       // Muat ulang detail produk agar rating bintang utama dan komentar langsung ter-update reaktif!
